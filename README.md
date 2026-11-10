@@ -59,7 +59,11 @@ npm run typecheck
 
 The original implementation passed six automated tests, TypeScript checks and a production build. Tests cover scheduling conflicts, adjacent slots, invalid dates, role restrictions, cancellation, required completion fields, photo validation and a real HTTP API with a serialized in-memory repository. The API test also checks concurrent scheduling and logout revocation.
 
-**MySQL integration has not yet been executed against a real database.** Docker was unavailable in the implementation environment. The HTTP test does not replace a database integration test.
+**Docker and real MySQL 8.4 integration passed on November 10, 2026.** [Verified GitHub Actions run](https://github.com/Santoszoi/fieldflow/actions/runs/42900315558).
+
+The workflow builds the production container and starts the actual Compose stack. It verifies authentication, technician permissions, five concurrent bookings (one accepted and four rejected), rollback of invalid updates, visit completion, logout revocation and persistence after restarting both the application and MySQL. It also confirms that accounts survive the restart while old sessions are invalidated. The six existing tests passed in the same run.
+
+The integration workflow runs for relevant changes on `main` and can also be triggered manually from Actions. It generates disposable passwords, masks them in logs, and removes only its isolated CI stack and volume. To run it locally against a disposable Compose stack, start the stack with the required database/seed environment variables, then use `FIELDFLOW_INTEGRATION=1 node scripts/test-mysql.mjs`. Keep `SEED_PASSWORD` exported in the shell. The script creates test records and restarts the containers; do not point it at an operational environment.
 
 Browser checks covered the dashboard, conflict messages, technician visibility, checklist completion and persistence after reload. Responsive styles are implemented, but no physical mobile-device inspection was performed.
 
@@ -75,4 +79,4 @@ Browser checks covered the dashboard, conflict messages, technician visibility, 
 
 ## Next improvements
 
-Validate Docker/MySQL end to end, normalize operational tables, add database integration tests, and move photos to dedicated object storage.
+Normalize operational tables, expand database integration coverage, and move photos to dedicated object storage.

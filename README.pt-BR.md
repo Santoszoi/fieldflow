@@ -70,7 +70,11 @@ npm run typecheck
 npm run build
 ```
 
-Seis testes verificam permissões, conflitos, cancelamento, conclusão, fotos e API HTTP, incluindo agendamentos concorrentes e revogação de sessão. O teste da API usa repositório em memória serializado: não é um teste de integração com MySQL. Docker/MySQL não foram executados no ambiente de criação porque Docker não está disponível.
+Seis testes verificam permissões, conflitos, cancelamento, conclusão, fotos e API HTTP, incluindo agendamentos concorrentes e revogação de sessão. O teste da API usa repositório em memória serializado: não é um teste de integração com MySQL. A integração com Docker e MySQL 8.4 real foi aprovada em 10/11/2026 no [GitHub Actions](https://github.com/Santoszoi/fieldflow/actions/runs/42900315558).
+
+O novo teste `scripts/test-mysql.mjs` usa a imagem de produção e o Compose reais. Verifica login, permissões, cinco agendamentos simultâneos (um aceito e quatro bloqueados), rollback de atualização inválida, conclusão e logout. Reinicia a aplicação e o MySQL e confirma persistência dos dados e das contas, além da invalidação das sessões antigas. Os seis testes anteriores também passaram nessa execução.
+
+O workflow `.github/workflows/mysql-integration.yml` roda em alterações relevantes na `main` e permite execução manual. Usa senhas temporárias mascaradas e remove apenas o ambiente isolado de CI ao terminar. Para reproduzir em ambiente descartável local, suba o Compose com as variáveis de banco e senha inicial exportadas e execute `FIELDFLOW_INTEGRATION=1 node scripts/test-mysql.mjs`. O script cria registros de teste e reinicia os contêineres; não execute contra um ambiente operacional.
 
 No navegador foram verificados o painel, bloqueio de conflito, visão restrita do técnico, conclusão com checklist e persistência após recarga. A responsividade está implementada em CSS, mas não houve inspeção em dispositivo móvel real.
 
