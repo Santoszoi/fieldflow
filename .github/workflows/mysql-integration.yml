@@ -1,0 +1,56 @@
+name: Docker and MySQL integration
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'server/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'package*.json'
+      - 'Dockerfile'
+      - 'compose.yaml'
+      - '.dockerignore'
+      - 'next.config.mjs'
+      - 'tsconfig.json'
+      - '.github/workflows/mysql-integration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: fieldflow-ci
+      NEXT_TELEMETRY_DISABLED: '1'
+      FIELDFLOW_INTEGRATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Generate disposable credentials
+        shell: bash
+        run: |
+          for key in DB_PASSWORD MYSQL_ROOT_PASSWORD SEED_PASSWORD; do
+            value=$(openssl rand -hex 24)
+            echo "::add-mask::$value"
+            echo "$key=$value" >> "$GITHUB_ENV"
+          done
+      - run: npm ci
+      - run: npm test
+      - name: Build production container
+        run: docker compose build
+      - name: Start MySQL and application
+        run: docker compose up -d
+      - name: Verify real database integration and restart persistence
+        run: node scripts/test-mysql.mjs
+      - name: Container diagnostics
+        if: failure()
+        run: docker compose ps -a && docker compose logs --tail=150
+      - name: Remove disposable test stack
+        if: always()
+        run: docker compose down -v --remove-orphans
