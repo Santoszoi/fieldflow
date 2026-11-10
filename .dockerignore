@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+.git
+.openai
+.sites-runtime
+.env
+.env.*
+*.tsbuildinfo
